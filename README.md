@@ -1,4 +1,4 @@
-# 🎙️ Sharia Copilot: Murabaha AI Compliance Checker
+# 🎙️ Sharia Copilot: AI Compliance Checker
 
 > **Automating Sharia Audits with Generative AI | PROCOM '26 Hackathon**
 
