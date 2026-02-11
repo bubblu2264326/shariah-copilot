@@ -84,7 +84,14 @@ async def analyze_contract(file: UploadFile = File(...)):
             yield f"data: {json.dumps({'status': 'error', 'message': 'AI Protocol Failure: No sharia-critical clauses identified in document.'})}\n\n"
             return
             
-        # 3. ANALYZE EACH CLAUSE
+        # Add index-based ID for frontend synchronization
+        for idx, clause in enumerate(clauses):
+            clause["id"] = f"cl_{idx}"
+
+        # PHASE 1: Send all extracted clauses to the frontend immediately
+        yield f"data: {json.dumps({'status': 'clauses_extracted', 'data': clauses})}\n\n"
+
+        # PHASE 2 & 3: ANALYZE EACH CLAUSE SEQUENTIALLY
         for clause in clauses:
             yield f"data: {json.dumps({'status': 'retrieving', 'message': f'Cross-referencing {clause['topic']}...'})}\n\n"
             
@@ -107,35 +114,40 @@ async def analyze_contract(file: UploadFile = File(...)):
                 
                 # Dynamic Logic Evaluation (Hardcore Engine)
                 is_fail = engine.evaluate(match.id, rule_meta["logic"], clause["metadata"])
-                
                 status_verdict = "FAIL" if is_fail else "PASS"
                 
-                # Get AI-powered reasoning and suggested fix
-                yield f"data: {json.dumps({'status': 'processing', 'message': f'Generating Sharia reasoning for {clause['topic']}...'})}\n\n"
+                # PHASE 2: Send verdict and truth immediately
+                verdict_data = {
+                    "id": clause["id"],
+                    "rule_id": match.id,
+                    "topic": rule_meta["topic"],
+                    "status": status_verdict,
+                    "severity": rule_meta["severity"],
+                    "citation": rule_meta["citation"],
+                    "exact_rule_text": rule_meta["rule_text"],
+                    "original_text": clause["text"],
+                    "clause_id": clause.get("clause_id", None)
+                }
+                yield f"data: {json.dumps({'status': 'verdict', 'data': verdict_data})}\n\n"
+                
+                # PHASE 3: Generate and stream AI reasoning
+                yield f"data: {json.dumps({'status': 'processing', 'message': f'Synthesizing reasoning for {clause['topic']}...'})}\n\n"
                 ai_details = await explainer.explain(
                     clause_text=clause["text"],
                     rule_text=rule_meta["rule_text"],
                     status=status_verdict
                 )
                 
-                verdict = {
-                    "rule_id": match.id,
-                    "topic": rule_meta["topic"],
-                    "status": status_verdict,
-                    "severity": rule_meta["severity"],
+                reasoning_data = {
+                    "id": clause["id"],
                     "explanation": ai_details.get("reasoning", rule_meta["rule_summary"]),
                     "reasoning": ai_details.get("reasoning", ""),
-                    "suggestion": ai_details.get("suggestion", ""),
-                    "citation": rule_meta["citation"],
-                    "exact_rule_text": rule_meta["rule_text"],
-                    "original_text": clause["text"],
-                    "clause_id": clause.get("clause_id", None)
+                    "suggestion": ai_details.get("suggestion", "")
                 }
-                
-                yield f"data: {json.dumps({'status': 'result', 'data': verdict})}\n\n"
+                yield f"data: {json.dumps({'status': 'reasoning', 'data': reasoning_data})}\n\n"
             
             # Slight sleep for smoother frontend streaming
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(0.3)
 
         yield f"data: {json.dumps({'status': 'complete', 'message': 'Full Audit Complete.'})}\n\n"
 

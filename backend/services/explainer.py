@@ -10,9 +10,10 @@ class ComplianceExplainer:
         genai.configure(api_key=api_key)
         # Priority model list for fallback resilience
         self.model_names = [
+            'gemini-flash-latest',
             'gemini-2.0-flash',
+            'gemini-1.5-pro',
             'gemini-2.5-flash',
-            'gemini-flash-latest'
         ]
 
     async def explain(self, clause_text: str, rule_text: str, status: str) -> dict:
