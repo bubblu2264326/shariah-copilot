@@ -135,14 +135,18 @@ async def analyze_contract(file: UploadFile = File(...)):
                 ai_details = await explainer.explain(
                     clause_text=clause["text"],
                     rule_text=rule_meta["rule_text"],
-                    status=status_verdict
+                    status=status_verdict,
+                    metadata=clause["metadata"],
+                    logic=rule_meta["logic"]
                 )
                 
                 reasoning_data = {
                     "id": clause["id"],
                     "explanation": ai_details.get("reasoning", rule_meta["rule_summary"]),
                     "reasoning": ai_details.get("reasoning", ""),
-                    "suggestion": ai_details.get("suggestion", "")
+                    "suggestion": ai_details.get("suggestion", ""),
+                    "metadata": clause["metadata"],
+                    "logic_str": rule_meta["logic"]
                 }
                 yield f"data: {json.dumps({'status': 'reasoning', 'data': reasoning_data})}\n\n"
             
@@ -152,6 +156,29 @@ async def analyze_contract(file: UploadFile = File(...)):
         yield f"data: {json.dumps({'status': 'complete', 'message': 'Full Audit Complete.'})}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
+    
+@app.post("/explain_deeply")
+async def explain_deeply(request: dict):
+    """Specific endpoint for deep, contextual Sharia reasoning."""
+    target_id = request.get("target_id")
+    all_nodes = request.get("all_nodes", [])
+    
+    # Find the target node
+    target_node = next((n for n in all_nodes if n.get("id") == target_id), None)
+    if not target_node:
+        return {"error": "Node not found"}
+        
+    # Get the rule text (this would ideally be stored, but we can pass it or re-fetch it)
+    # For now, we assume it's passed or available in the node
+    rule_text = target_node.get("exact_rule_text", "AAOIFI Murabahah Standards")
+    
+    analysis = await explainer.deep_explain(
+        target_node=target_node,
+        all_nodes=all_nodes,
+        rule_text=rule_text
+    )
+    
+    return analysis
 
 if __name__ == "__main__":
     import uvicorn
