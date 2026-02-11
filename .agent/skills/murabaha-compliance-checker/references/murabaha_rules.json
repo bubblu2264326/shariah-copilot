@@ -1,0 +1,252 @@
+[
+    {
+        "rule_id": "MUR-001",
+        "topic": "Penalty as income",
+        "severity": "critical",
+        "rule_summary": "Late payment penalties must be donated to charity, not kept as bank income.",
+        "rule_text": "It is permissible that the contract of Murabahah consists of an undertaking from the customer to pay an amount of money or a percentage of the debt, on the basis of undertaking to donate it in the event of a delay on his part in paying instalments on their due date. The Shari’ah Supervisory Board of the Institution must have full knowledge that any such amount is indeed spent on charitable causes, and not for the benefit of the Institution itself.",
+        "citation": "AAOIFI SS No. (8), Clause 5/6",
+        "variables": [
+            "penalty_recipient"
+        ],
+        "logic": "penalty_recipient != 'charity'",
+        "fail_message": "Non-compliant: Penalties are incorrectly directed to the bank. Sharia requires they be donated to charity.",
+        "keywords": [
+            "penalty",
+            "income",
+            "charitable",
+            "late payment"
+        ]
+    },
+    {
+        "rule_id": "MUR-002",
+        "topic": "Fixed Profit vs LIBOR",
+        "severity": "critical",
+        "rule_summary": "Profit must be fixed at signature; cannot be tied to future variable rates like LIBOR.",
+        "rule_text": "It is an obligation that both the price of the item and the Institution’s profit on the Murabahah transaction be fixed and known to both parties on the signature of the contract of sale. It is not permitted under any circumstances to subject the determination of the price or the profit to unknown variations or variations that are determinable in the future, such as by concluding the sale and making the profit dependent on the rate of LIBOR that will prevail in the future.",
+        "citation": "AAOIFI SS No. (8), Clause 4/6",
+        "variables": [
+            "profit_basis",
+            "is_fixed_at_signature"
+        ],
+        "logic": "profit_basis == 'future_variable' or is_fixed_at_signature == false",
+        "fail_message": "Non-compliant: Profit is tied to future variables or not fixed at signature, violating the requirement for certainty (Gharar avoidance).",
+        "keywords": [
+            "LIBOR",
+            "variable profit",
+            "fixed price",
+            "uncertainty"
+        ]
+    },
+    {
+        "rule_id": "MUR-003",
+        "topic": "Possession Before Sale",
+        "severity": "critical",
+        "rule_summary": "Bank must possess asset (actually or constructively) before selling it.",
+        "rule_text": "The Institution shall not sell any item in a Murabahah transaction before it acquires such item. Hence, it is not valid for the Institution to conclude a Murabahah sale with the customer before the Institution concludes a purchase contract with the supplier of the item the subject matter of the Murabahah and before it acquires actual or constructive possession of such items, which can be achieved when the supplier gives the Institution control over the item or the documents that represent possession thereof.",
+        "citation": "AAOIFI SS No. (8), Clause 3/1/1",
+        "variables": [
+            "possession_acquired_before_sale"
+        ],
+        "logic": "possession_acquired_before_sale == false",
+        "fail_message": "Critical: The bank is selling an asset it does not yet possess. This is a prohibited 'sale of what you do not have'.",
+        "keywords": [
+            "possession",
+            "ownership",
+            "title",
+            "acquisition"
+        ]
+    },
+    {
+        "rule_id": "MUR-004",
+        "topic": "Ownership Transfer Timing",
+        "severity": "critical",
+        "rule_summary": "Ownership must transfer upon contract; cannot be withheld until full payment.",
+        "rule_text": "It is not permissible to stipulate that the ownership of the item will not be transferred to the customer until the full payment of the selling price. However, it is permissible to postpone the registration of the asset in the customer’s name as a guarantee of the full payment of the selling price. The Institution may receive authority from the customer to sell the asset in case the customer delays payment of the selling price, in which case the Institution should issue a counter-deed to the customer to establish the latter’s right to ownership.",
+        "citation": "AAOIFI SS No. (8), Clause 5/4",
+        "variables": [
+            "ownership_transfer_condition"
+        ],
+        "logic": "ownership_transfer_condition == 'on_full_payment'",
+        "fail_message": "Non-compliant: Contract withholds ownership until final payment. Murabaha requires immediate transfer of title.",
+        "keywords": [
+            "transfer",
+            "withheld",
+            "title",
+            "ownership"
+        ]
+    },
+    {
+        "rule_id": "MUR-005",
+        "topic": "Agency Restriction",
+        "severity": "warning",
+        "rule_summary": "The customer should not be appointed as a purchase agent unless there is a dire need.",
+        "rule_text": "The original principle is that the Institution itself purchases the item directly from the supplier. However, it is permissible for the Institution to carry out the purchase by authorizing an agent, other than the purchase orderer, to execute the purchase; and the customer (the purchase orderer) should not be appointed to act as an agent except in case of a dire need. Furthermore, the agent must not sell the item to himself. Rather, the Institution must first acquire title of the item and then sell it to the agent.",
+        "citation": "AAOIFI SS No. (8), Clause 3/1/3",
+        "variables": [
+            "customer_as_agent",
+            "dire_need_established"
+        ],
+        "logic": "customer_as_agent == true and dire_need_established == false",
+        "fail_message": "Warning: The customer is appointed as a purchase agent without established dire need, which is discouraged in Murabaha transactions.",
+        "keywords": [
+            "agency",
+            "agent",
+            "customer",
+            "dire need"
+        ]
+    },
+    {
+        "rule_id": "MUR-006",
+        "topic": "Actual Damage Recovery",
+        "severity": "warning",
+        "rule_summary": "Recovery from deposit (Hamish Jiddiyyah) is limited to actual cost differences.",
+        "rule_text": "The actual damage to the Institution may not include the loss of its mark-up in the Murabahah transaction, that is, its opportunity loss.",
+        "citation": "AAOIFI SS No. (8), Clause 2/5/4",
+        "variables": [
+            "damage_recovery_includes_markup"
+        ],
+        "logic": "damage_recovery_includes_markup == true",
+        "fail_message": "Warning: The bank is attempting to recover lost profits (markup) from the security deposit, which is prohibited.",
+        "keywords": [
+            "Hamish Jiddiyyah",
+            "actual damage",
+            "markup",
+            "opportunity loss"
+        ]
+    },
+    {
+        "rule_id": "MUR-007",
+        "topic": "Insurance Responsibility",
+        "severity": "critical",
+        "rule_summary": "Bank must bear insurance cost prior to selling to the customer.",
+        "rule_text": "As the Institution is the owner of the subject matter of Murabahah its insurance lies with the Institution before selling it to the customer. Any amount recovered from insurance at this stage will belong to the Institution exclusively and the customer has no claim to it even if the recovered amount exceeds the purchase price. The Institution is entitled to include the expenses of insurance in the Murabahah cost price to be subsequently added to the price of Murabahah.",
+        "citation": "AAOIFI SS No. (8), Clause 3/2/6",
+        "variables": [
+            "insurance_payer_pre_sale"
+        ],
+        "logic": "insurance_payer_pre_sale == 'customer'",
+        "fail_message": "Critical: Customer is being charged for insurance while the bank still owns the asset.",
+        "keywords": [
+            "insurance",
+            "cost",
+            "risk",
+            "ownership"
+        ]
+    },
+    {
+        "rule_id": "MUR-008",
+        "topic": "Early Payment Discount Stipulation",
+        "severity": "warning",
+        "rule_summary": "Early payment discounts cannot be a contractual right.",
+        "rule_text": "It is permissible for the Institution to give up part of the selling price if the customer pays early, provided this was not part of the contractual agreement.",
+        "citation": "AAOIFI SS No. (8), Clause 5/9",
+        "variables": [
+            "discount_in_contract"
+        ],
+        "logic": "discount_in_contract == true",
+        "fail_message": "Warning: Re-stating an early payment discount in the contract may render it a contractual right, which is Sharia-prohibited.",
+        "keywords": [
+            "early payment",
+            "discount",
+            "rebate",
+            "contractual agreement"
+        ]
+    },
+    {
+        "rule_id": "MUR-009",
+        "topic": "Fixed Price After Contract",
+        "severity": "critical",
+        "rule_summary": "Price cannot be increased for extra time or delay after reaching contract.",
+        "rule_text": "The selling price of the asset becomes a debt that the customer is obligated to pay at the time agreed upon. It is not permitted subsequently to demand any extra payment either in consideration of extra time given for payment or for delay in payment that may be for a reason or no reason.",
+        "citation": "AAOIFI SS No. (8), Clause 4/8",
+        "variables": [
+            "price_increase_allowed_for_delay"
+        ],
+        "logic": "price_increase_allowed_for_delay == true",
+        "fail_message": "Critical: The contract allows for price increases due to payment delays, which is equivalent to prohibited Riba.",
+        "keywords": [
+            "fixed price",
+            "delay",
+            "extra time",
+            "debt",
+            "increase"
+        ]
+    },
+    {
+        "rule_id": "MUR-010",
+        "topic": "Defect Responsibility",
+        "severity": "warning",
+        "rule_summary": "Bank is responsible for hidden defects appearing after contract but before delivery.",
+        "rule_text": "The Institution shall be responsible for pre-existing hidden defects which appear after the conclusion of the contract, unless it stipulates otherwise according to item 10/4. However, it shall not be responsible for any new defects (recent defects) that arise after the conclusion of the contract and taking delivery by the customer.",
+        "citation": "AAOIFI SS No. (8), Clause 4/10",
+        "variables": [
+            "bank_excludes_pre_existing_defects"
+        ],
+        "logic": "bank_excludes_pre_existing_defects == true",
+        "fail_message": "Warning: The bank is incorrectly excluding liability for pre-existing hidden defects.",
+        "keywords": [
+            "defects",
+            "responsibility",
+            "liability",
+            "delivery"
+        ]
+    },
+    {
+        "rule_id": "MUR-011",
+        "topic": "Expense Disclosure",
+        "severity": "notice",
+        "rule_summary": "Bank must disclose all expenses included in the cost price.",
+        "rule_text": "The Institution is obliged to disclose to the customer, when concluding the contract of sale, the details of any expenses that it would include in determining the cost. The Institution is also entitled to include any expenses relating to the item if this is acceptable to the customer. However, if the Institution failed to disclose any expenses, it is not entitled to include them unless they are customarily considered as normal expenses, such as transportation expenses, storage expenses, fees for letters of credit and insurance premiums.",
+        "citation": "AAOIFI SS No. (8), Clause 4/3",
+        "variables": [
+            "expenses_disclosed"
+        ],
+        "logic": "expenses_disclosed == false",
+        "fail_message": "Notice: Expense breakdown is missing. Transparency is required for 'Trust-based' contracts like Murabaha.",
+        "keywords": [
+            "disclosure",
+            "expenses",
+            "cost",
+            "transparency"
+        ]
+    },
+    {
+        "rule_id": "MUR-012",
+        "topic": "Documentation Name",
+        "severity": "warning",
+        "rule_summary": "Purchase documents from supplier must be in the Bank's name.",
+        "rule_text": "The original principle is that all documents and contracts concerned with the execution of the sale of the item must be in the name of the Institution and not in that of the customer, unless the latter acts as the Institution’s agent in acquiring the item.",
+        "citation": "AAOIFI SS No. (8), Clause 3/1/6",
+        "variables": [
+            "supplier_invoice_recipient"
+        ],
+        "logic": "supplier_invoice_recipient == 'customer'",
+        "fail_message": "Warning: Supplier invoice is in the customer's name, suggesting a direct loan rather than an asset purchase by the bank.",
+        "keywords": [
+            "documents",
+            "supplier",
+            "invoice",
+            "name"
+        ]
+    },
+    {
+        "rule_id": "MUR-013",
+        "topic": "Direct Expenses Only",
+        "severity": "critical",
+        "rule_summary": "Only direct third-party expenses can be added to the cost.",
+        "rule_text": "The Institution is not entitled to include in the base cost of the item, for the purpose of calculating the Murabahah price, any amounts other than the direct expenses that are paid to a third party. It is not permissible, for example, for the Institution to add to the cost of the item payments made to its own staff for their work, and the like.",
+        "citation": "AAOIFI SS No. (8), Clause 4/4",
+        "variables": [
+            "includes_internal_staff_costs"
+        ],
+        "logic": "includes_internal_staff_costs == true",
+        "fail_message": "Non-compliant: Internal bank costs (like staff salaries) are included in the asset price.",
+        "keywords": [
+            "direct expenses",
+            "hidden charges",
+            "cost",
+            "staff"
+        ]
+    }
+]
