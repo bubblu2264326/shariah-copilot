@@ -1,18 +1,25 @@
 import google.generativeai as genai
 import json
 import logging
+import asyncio
+import re
 
 class ComplianceExplainer:
     def __init__(self, api_key: str):
         self.logger = logging.getLogger("compliance_explainer")
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-flash-latest')
+        # Priority model list for fallback resilience
+        self.model_names = [
+            'gemini-2.0-flash',
+            'gemini-2.5-flash',
+            'gemini-flash-latest'
+        ]
 
     async def explain(self, clause_text: str, rule_text: str, status: str) -> dict:
-        """Generates reasoning and suggested fixes for a compliance result."""
+        """Generates reasoning and suggested fixes for a compliance result with model fallbacks."""
         
         prompt = f"""
-        You are an elite AAOIFI Sharia Auditor. Your goal is to provide a microscopic audit of a Murabahah contract clause.
+        You are an elite Islamic Finance Compliance Officer and Sharia Auditor. Your goal is to provide a microscopic, rich-text audit of a Murabahah contract clause against AAOIFI standards.
         
         INPUT DATA:
         - Audited Contract Clause: "{clause_text}"
@@ -21,33 +28,56 @@ class ComplianceExplainer:
         
         YOUR TASK:
         1. REASONING: 
-           - If status is FAIL: Explicitly quote the problematic phrase from the 'Audited Contract Clause'. Explain exactly why it contradicts the 'AAOIFI Sharia Standard'. Use phrases like "Your contract states '...', which is non-compliant because..."
-           - If status is PASS: Confirm how the specific phrasing in the clause aligns with the AAOIFI requirement.
+           - Provide a deep comparative analysis.
+           - If status is FAIL: Explicitly quote the problematic phrase using **bold** or > blockquotes. Explain exactly why it contradicts the Sharia Standard.
+           - If status is PASS: Use Markdown to highlight precisely how the contractual phrasing aligns with AAOIFI requirements.
         
         2. SUGGESTION:
-           - Provide the exact corrected contractual wording that would make this clause 100% Sharia compliant while maintaining the bank's legal intent.
+           - Provide the exact corrected contractual wording. Use Markdown code blocks (```) to encapsulate the suggested wording for clarity.
         
-        OUTPUT FORMAT (JSON ONLY):
+        OUTPUT FORMAT (JSON ONLY, NO FILLER):
         {{
-            "reasoning": "Detailed comparative analysis here...",
-            "suggestion": "Corrected contractual wording here..."
+            "reasoning": "Markdown formatted reasoning...",
+            "suggestion": "Markdown formatted suggestion..."
         }}
         """
         
-        try:
-            response = self.model.generate_content(prompt)
-            raw_text = response.text.strip()
-            
-            # JSON cleaning
-            if "```json" in raw_text:
-                raw_text = raw_text.split("```json")[1].split("```")[0].strip()
-            elif "```" in raw_text:
-                raw_text = raw_text.split("```")[1].split("```")[0].strip()
+        for model_name in self.model_names:
+            try:
+                self.logger.info(f"Attempting Sharia reasoning with model: {model_name}")
+                model = genai.GenerativeModel(model_name)
                 
-            return json.loads(raw_text)
-        except Exception as e:
-            self.logger.error(f"Explanation error: {str(e)}")
-            return {
-                "reasoning": f"Audit complete. Phrasing evaluated against AAOIFI standards. Verdict: {status}.",
-                "suggestion": "Review the specific AAOIFI standard for precise wording updates."
-            }
+                # Using to_thread for the blocking SDK call
+                response = await asyncio.to_thread(
+                    model.generate_content,
+                    prompt
+                )
+                
+                raw_text = response.text.strip()
+                
+                # Robust JSON extraction using regex
+                json_match = re.search(r'\{.*\}', raw_text, re.DOTALL)
+                if json_match:
+                    clean_text = json_match.group(0)
+                else:
+                    clean_text = raw_text
+
+                # Additional cleaning for common Gemini formatting
+                if "```json" in clean_text:
+                    clean_text = clean_text.split("```json")[1].split("```")[0].strip()
+                elif "```" in clean_text:
+                    clean_text = clean_text.split("```")[1].split("```")[0].strip()
+                    
+                result = json.loads(clean_text)
+                self.logger.info(f"Successfully generated reasoning using {model_name}")
+                return result
+                
+            except Exception as e:
+                self.logger.warning(f"Model {model_name} failed for reasoning: {str(e)}. Attempting fallback...")
+                continue
+                
+        self.logger.error("All Gemini models in fallback list failed for reasoning.")
+        return {
+            "reasoning": f"### Audit Verified\n\n- **Verdict**: {status}\n- **Analysis**: Phrasing evaluated against AAOIFI standards. Detailed AI reasoning unavailable due to technical connection limits.",
+            "suggestion": "Consult the AAOIFI Standard No. 8 for precise wording requirements."
+        }

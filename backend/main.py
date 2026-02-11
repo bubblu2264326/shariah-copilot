@@ -72,13 +72,18 @@ async def analyze_contract(file: UploadFile = File(...)):
             await asyncio.sleep(2)
             i += 1
             
-        clauses = await clauses_task
+        clauses, error_msg = await clauses_task
         
+        if error_msg:
+            logger.error(f"Extraction failed: {error_msg}")
+            yield f"data: {json.dumps({'status': 'error', 'message': error_msg})}\n\n"
+            return
+            
         if not clauses:
             logger.warning("Gemini Extractor returned 0 clauses.")
-            yield f"data: {json.dumps({'status': 'complete', 'message': 'AI analysis complete, but no Murabaha-related clauses were identified in this document.'})}\n\n"
+            yield f"data: {json.dumps({'status': 'error', 'message': 'AI Protocol Failure: No sharia-critical clauses identified in document.'})}\n\n"
             return
-
+            
         # 3. ANALYZE EACH CLAUSE
         for clause in clauses:
             yield f"data: {json.dumps({'status': 'retrieving', 'message': f'Cross-referencing {clause['topic']}...'})}\n\n"
@@ -123,7 +128,8 @@ async def analyze_contract(file: UploadFile = File(...)):
                     "suggestion": ai_details.get("suggestion", ""),
                     "citation": rule_meta["citation"],
                     "exact_rule_text": rule_meta["rule_text"],
-                    "original_text": clause["text"]
+                    "original_text": clause["text"],
+                    "clause_id": clause.get("clause_id", None)
                 }
                 
                 yield f"data: {json.dumps({'status': 'result', 'data': verdict})}\n\n"
